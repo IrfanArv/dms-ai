@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+langchain
+langchain-chroma
+chromadb
+pdfplumber
+python-docx
+pytesseract
+pdf2image
+pandas
+python-multipart
+requests
+aiohttp
+spacy
+cython
+pillow

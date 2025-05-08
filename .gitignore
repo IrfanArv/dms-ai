@@ -1,0 +1,8 @@
+upload/*
+venv/
+vectorstore/
+__pycache__/
+*.pyc
+.env
+.idea/
+.vscode/ 
