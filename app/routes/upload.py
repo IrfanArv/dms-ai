@@ -9,7 +9,7 @@ from app.services.embedding import embed_and_store
 
 router = APIRouter()
 
-#soon add streaming response for better user experience
+#soon add streaming response for better user experience di frontend
 
 @router.post("/")
 async def upload_doc(file: UploadFile = File(...)):

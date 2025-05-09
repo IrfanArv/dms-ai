@@ -2,7 +2,6 @@ import os
 
 from fastapi import UploadFile
 
-# Folder upload (bisa override via ENV)
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "upload")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 

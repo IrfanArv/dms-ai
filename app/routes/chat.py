@@ -41,7 +41,6 @@ def get_file_metadata(upload_dir="upload"):
     return total_files_uploaded, file_list, last_upload_date
 
 def get_document_overview(files, upload_dir="upload"):
-    # Placeholder: bisa diganti dengan summary otomatis per file
     overview = []
     for f in files:
         path = os.path.join(upload_dir, f)
@@ -173,18 +172,9 @@ Pertanyaan Pengguna (USER_QUERY): {request.query}
 Jawaban (dalam Bahasa Indonesia):
 """
         
-        # Gabungkan system prompt dan user prompt - No, use the unified prompt directly
-        # prompt = f"{system_prompt}\n\nUSER_QUERY: {request.query}\n\nRETRIEVED_CHUNKS:\n{context}\n"
-        # For the non-streaming endpoint, we use the unified_prompt directly.
-
+     
         response_chunks = []
-        # Note: The generate_response function is expected to yield JSON strings like '{"text": "..."}'
-        # However, for the non-streaming endpoint, we aggregate these.
-        # The original code for generate_response seems to yield raw text chunks directly
-        # Let's assume generate_response yields raw text chunks if not JSON.
-        # If generate_response itself is yielding JSON strings like '{"text": "content"}',
-        # the original aggregation logic was fine. Let's stick to that for robustness.
-
+    
         async for chunk_json_str in generate_response(unified_prompt, temperature=request.temperature):
             try:
                 # If generate_response sends JSON strings like {"text": "chunk_content"}
