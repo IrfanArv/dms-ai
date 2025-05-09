@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from pydantic import BaseModel
 from typing import List, Optional
 import json
@@ -7,6 +7,7 @@ import asyncio
 import aiohttp
 import os
 from datetime import datetime
+import base64
 
 from app.services.embedding import vectorstore
 from app.services.llm_client import generate_response
@@ -15,7 +16,7 @@ router = APIRouter()
 
 class ChatRequest(BaseModel):
     query: str
-    context_window: Optional[int] = 5  # Jumlah chunk yang akan diambil
+    context_window: Optional[int] = 5
     temperature: Optional[float] = 0.7
 
 def get_doc_count():
@@ -81,7 +82,8 @@ Tugasmu adalah:
 3.  CARI & AMBIL DATA: Temukan dan sajikan informasi spesifik dari dalam dokumen.
 4.  ANALISIS & LAPORKAN: Baca, pindai, buat ringkasan, atau laporan berdasarkan isi dan metadata dokumen.
 5.  INTERAKSI ALAMI: Berinteraksilah seolah-olah kamu adalah admin dokumen yang kompeten, menggunakan Bahasa Indonesia yang profesional dan jelas.
-
+6.  JANGAN BERI KOMENTAR: Jangan beri komentar apa-apa, hanya berikan jawaban saja.
+7.  Ketika pembukaan percakapan, kamu harus memperkenalkan diri sebagai DMS AI dengan singkat, asisten AI cerdas yang bertugas membantu pengguna terkait dokumen perusahaan. dan tidak perlu beri data atau informasi perusahaan. atau baca 
 Gunakan RETRIEVED_CHUNKS sebagai dasar faktual utama untuk jawabanmu.
 Jika informasi tidak ada dalam RETRIEVED_CHUNKS, nyatakan bahwa data tidak ditemukan dalam dokumen yang tersedia.
 
@@ -96,6 +98,19 @@ Jawaban (dalam Bahasa Indonesia):
         # 4. Generate streaming response
         async for chunk in generate_response(prompt, temperature=temperature):
             yield f"data: {json.dumps({'text': chunk})}\n\n"
+        
+        # 5. Send source documents as the last message
+        sources_data = [
+            {
+                "metadata": {
+                    "source": doc.metadata.get("source", ""),
+                    "file_type": doc.metadata.get("file_type", "")
+                },
+                "score": float(score)
+            }
+            for doc, score in results
+        ]
+        yield f"data: {json.dumps({'sources': sources_data})}\n\n"
             
     except Exception as e:
         yield f"data: {json.dumps({'error': str(e)})}\n\n"
@@ -144,6 +159,8 @@ Tugasmu adalah:
 3.  CARI & AMBIL DATA: Temukan dan sajikan informasi spesifik dari dalam dokumen.
 4.  ANALISIS & LAPORKAN: Baca, pindai, buat ringkasan, atau laporan berdasarkan isi dan metadata dokumen.
 5.  INTERAKSI ALAMI: Berinteraksilah seolah-olah kamu adalah admin dokumen yang kompeten, menggunakan Bahasa Indonesia yang profesional dan jelas.
+6.  JANGAN BERI KOMENTAR: Jangan beri komentar apa-apa, hanya berikan jawaban saja.
+7.  Ketika pembukaan percakapan, kamu harus memperkenalkan diri sebagai DMS AI, asisten AI cerdas yang bertugas membantu pengguna terkait dokumen perusahaan. dan gausah beri data atau informasi lainnya.
 
 Gunakan RETRIEVED_CHUNKS sebagai dasar faktual utama untuk jawabanmu.
 Jika informasi tidak ada dalam RETRIEVED_CHUNKS, nyatakan bahwa data tidak ditemukan dalam dokumen yang tersedia.
@@ -191,8 +208,10 @@ Jawaban (dalam Bahasa Indonesia):
             "response": response_text,
             "sources": [
                 {
-                    "content": doc.page_content,
-                    "metadata": doc.metadata,
+                    "metadata": {
+                        "source": doc.metadata.get("source", ""),
+                        "file_type": doc.metadata.get("file_type", "")
+                    },
                     "score": float(score)
                 }
                 for doc, score in results
@@ -200,3 +219,17 @@ Jawaban (dalam Bahasa Indonesia):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) 
+
+@router.get("/document/{filename}")
+async def get_document(filename: str):
+    """Get document file from upload directory."""
+    file_path = os.path.join("upload", filename)
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+        
+    return FileResponse(
+        path=file_path,
+        filename=filename,
+        media_type="application/pdf"
+    ) 

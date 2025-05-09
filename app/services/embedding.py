@@ -79,7 +79,12 @@ def embed_and_store(chunks: list[str], metadata: dict):
         {"text": ent[0], "label": ent[1]} for ent in metadata.get("entities", [])
     ])
     metadatas = [
-        {"chunk_index": i, "entities": entities_str, "file_type": metadata.get("file_type", "unknown")}
+        {
+            "chunk_index": i,
+            "entities": entities_str,
+            "file_type": metadata.get("file_type", "unknown"),
+            "source": metadata.get("filename", "")
+        }
         for i in range(len(chunks))
     ]
 

@@ -22,6 +22,8 @@ async def upload_doc(file: UploadFile = File(...)):
     # 2) Ekstrak teks & metadata
     try:
         text, metadata = extract_text_and_metadata(file_path)
+        # Add filename to metadata
+        metadata["filename"] = file.filename
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Extraction error: {e}")
 
